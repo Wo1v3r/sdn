@@ -5,7 +5,6 @@ from pox.lib.util import dpid_to_str
 from pox.lib.util import dpidToStr
 from pox.lib.addresses import IPAddr, EthAddr
 
-from collections import defaultdict
 
 import pox.misc
 import csv
@@ -90,15 +89,6 @@ class Controller (EventMixin):
 
     def __init__(self):
         self.listenTo(core.openflow)
-        # Adjacency map.  [sw1][sw2] -> port from sw1 to sw2
-        self.adjacency = defaultdict(lambda: defaultdict(lambda: None))
-
-    def _handle_LinkEvent(self, event):
-        l = event.link
-        sw1 = dpid_to_str(l.dpid1)
-        sw2 = dpid_to_str(l.dpid2)
-        self.adjacency[sw1][sw2] = l.port1
-        self.adjacency[sw2][sw1] = l.port2
 
     def _handle_ConnectionUp(self, event):
         for msg in messages:
