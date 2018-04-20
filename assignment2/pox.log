@@ -1,0 +1,90 @@
+POX 0.2.0 (carp) / Copyright 2011-2013 James McCauley, et al.
+INFO:core:POX 0.2.0 (carp) is up.
+INFO:openflow.of_01:[00-00-00-00-00-09 1] connected
+INFO:controller:Connection up event for: 00-00-00-00-00-09
+INFO:controller:['10.0.0.5', '10.0.0.6', '10.0.0.7', '10.0.0.8']
+INFO:controller:Sending non ARP packet
+INFO:controller:{}
+ERROR:core:Exception while handling OpenFlowNexus!PacketIn...
+Traceback (most recent call last):
+  File "/home/parallels/Documents/pox/pox/lib/revent/revent.py", line 231, in raiseEventNoErrors
+    return self.raiseEvent(event, *args, **kw)
+  File "/home/parallels/Documents/pox/pox/lib/revent/revent.py", line 278, in raiseEvent
+    rv = event._invoke(handler, *args, **kw)
+  File "/home/parallels/Documents/pox/pox/lib/revent/revent.py", line 156, in _invoke
+    return handler(self, *args, **kw)
+  File "/home/parallels/Documents/pox/ext/controller.py", line 131, in _handle_PacketIn
+    mac = str(self.ipToMac[str(packet.payload.dstip)])
+KeyError: '10.0.0.5'
+INFO:controller:Sending non ARP packet
+INFO:controller:{}
+ERROR:core:Exception while handling OpenFlowNexus!PacketIn...
+Traceback (most recent call last):
+  File "/home/parallels/Documents/pox/pox/lib/revent/revent.py", line 231, in raiseEventNoErrors
+    return self.raiseEvent(event, *args, **kw)
+  File "/home/parallels/Documents/pox/pox/lib/revent/revent.py", line 278, in raiseEvent
+    rv = event._invoke(handler, *args, **kw)
+  File "/home/parallels/Documents/pox/pox/lib/revent/revent.py", line 156, in _invoke
+    return handler(self, *args, **kw)
+  File "/home/parallels/Documents/pox/ext/controller.py", line 131, in _handle_PacketIn
+    mac = str(self.ipToMac[str(packet.payload.dstip)])
+KeyError: '10.0.0.5'
+INFO:controller:Sending non ARP packet
+INFO:controller:{}
+ERROR:core:Exception while handling OpenFlowNexus!PacketIn...
+Traceback (most recent call last):
+  File "/home/parallels/Documents/pox/pox/lib/revent/revent.py", line 231, in raiseEventNoErrors
+    return self.raiseEvent(event, *args, **kw)
+  File "/home/parallels/Documents/pox/pox/lib/revent/revent.py", line 278, in raiseEvent
+    rv = event._invoke(handler, *args, **kw)
+  File "/home/parallels/Documents/pox/pox/lib/revent/revent.py", line 156, in _invoke
+    return handler(self, *args, **kw)
+  File "/home/parallels/Documents/pox/ext/controller.py", line 131, in _handle_PacketIn
+    mac = str(self.ipToMac[str(packet.payload.dstip)])
+KeyError: '10.0.0.5'
+INFO:controller:Sending non ARP packet
+INFO:controller:{}
+ERROR:core:Exception while handling OpenFlowNexus!PacketIn...
+Traceback (most recent call last):
+  File "/home/parallels/Documents/pox/pox/lib/revent/revent.py", line 231, in raiseEventNoErrors
+    return self.raiseEvent(event, *args, **kw)
+  File "/home/parallels/Documents/pox/pox/lib/revent/revent.py", line 278, in raiseEvent
+    rv = event._invoke(handler, *args, **kw)
+  File "/home/parallels/Documents/pox/pox/lib/revent/revent.py", line 156, in _invoke
+    return handler(self, *args, **kw)
+  File "/home/parallels/Documents/pox/ext/controller.py", line 131, in _handle_PacketIn
+    mac = str(self.ipToMac[str(packet.payload.dstip)])
+KeyError: '10.0.0.5'
+INFO:controller:Sending non ARP packet
+INFO:controller:{}
+ERROR:core:Exception while handling OpenFlowNexus!PacketIn...
+Traceback (most recent call last):
+  File "/home/parallels/Documents/pox/pox/lib/revent/revent.py", line 231, in raiseEventNoErrors
+    return self.raiseEvent(event, *args, **kw)
+  File "/home/parallels/Documents/pox/pox/lib/revent/revent.py", line 278, in raiseEvent
+    rv = event._invoke(handler, *args, **kw)
+  File "/home/parallels/Documents/pox/pox/lib/revent/revent.py", line 156, in _invoke
+    return handler(self, *args, **kw)
+  File "/home/parallels/Documents/pox/ext/controller.py", line 131, in _handle_PacketIn
+    mac = str(self.ipToMac[str(packet.payload.dstip)])
+KeyError: '10.0.0.5'
+INFO:controller:Sending non ARP packet
+INFO:controller:{}
+ERROR:core:Exception while handling OpenFlowNexus!PacketIn...
+Traceback (most recent call last):
+  File "/home/parallels/Documents/pox/pox/lib/revent/revent.py", line 231, in raiseEventNoErrors
+    return self.raiseEvent(event, *args, **kw)
+  File "/home/parallels/Documents/pox/pox/lib/revent/revent.py", line 278, in raiseEvent
+    rv = event._invoke(handler, *args, **kw)
+  File "/home/parallels/Documents/pox/pox/lib/revent/revent.py", line 156, in _invoke
+    return handler(self, *args, **kw)
+  File "/home/parallels/Documents/pox/ext/controller.py", line 131, in _handle_PacketIn
+    mac = str(self.ipToMac[str(packet.payload.dstip)])
+KeyError: '10.0.0.5'
+INFO:controller:ARP Packet type
+INFO:controller:{'10.0.0.1': EthAddr('00:00:00:00:00:01')}
+INFO:controller:A Client arp req server
+INFO:controller:Faking ARP reply for client as loadbalancer
+INFO:core:Going down...
+INFO:openflow.of_01:[00-00-00-00-00-09 1] disconnected
+INFO:core:Down.
