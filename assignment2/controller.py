@@ -1,4 +1,5 @@
 import pox.openflow.libopenflow_01 as of
+import matplotlib.pyplot as plot
 import random
 from pox.core import core
 from pox.lib.revent import *
@@ -7,14 +8,22 @@ from pox.lib.packet import arp, ethernet
 from pox.lib.addresses import EthAddr, IPAddr
 from hosts import clients, servers
 
+
 log = core.getLogger()
 
 clients_mac = list(map(lambda (_,__,mac,___): EthAddr(mac),clients))
 clients_ip = list(map(lambda( _,ip,__,___): ip, clients))
 servers_ip = list(map(lambda(_,ip,__,___): ip, servers))
 
-LOAD_BALANCER_MAC = EthAddr('00:00:00:00:00:10')
-LOAD_BALANCER_IP = IPAddr('10.0.0.10')
+balancer_plot = {}
+
+LOAD_BALANCER = {'MAC': EthAddr('00:00:00:00:00:10') }
+
+
+def launch(ip='10.0.0.10'):
+    log.info('IP passed: ' + ip)
+    LOAD_BALANCER['IP'] = IPAddr(ip)
+    core.registerNew(Controller)
 
 class Controller (EventMixin):
 
@@ -40,8 +49,15 @@ class Controller (EventMixin):
 
         map(installServer, servers)
 
+    def _handle_ConnectionDown(self,event):
+        log.info('Connection Down, showing results:')
+        fig = plot.figure(figsize=(10, 10))
+        ax = fig.add_subplot(111)
+        ax.bar(balancer_plot.keys(), balancer_plot.values())
+        plot.show()
+
     def _handle_PacketIn(self, event):
-        print('current results: ', self.results)
+        print('Load Balancer: ', balancer_plot)
         packet = event.parsed
         self.macToPort [packet.src] = event.port
 
@@ -51,7 +67,7 @@ class Controller (EventMixin):
             self.ipToMac [str(packet.payload.protosrc)] =  packet.src
 
             #client -> server : rewrite src as load balancer V
-            if packet.next.protodst == LOAD_BALANCER_IP:
+            if packet.next.protodst == LOAD_BALANCER['IP']:
                 log.info('A Client arp req server')
                 
                 # Get the ARP request from packet
@@ -60,16 +76,16 @@ class Controller (EventMixin):
                 # Create ARP reply
                 arp_rep = arp()
                 arp_rep.opcode = arp.REPLY
-                arp_rep.hwsrc = LOAD_BALANCER_MAC    
+                arp_rep.hwsrc = LOAD_BALANCER['MAC']
                 arp_rep.hwdst = arp_req.hwsrc    
-                arp_rep.protosrc = LOAD_BALANCER_IP
+                arp_rep.protosrc = LOAD_BALANCER['IP']
                 arp_rep.protodst = arp_req.protosrc
 
                 # Create the Ethernet packet
                 ether = ethernet()
                 ether.type = ethernet.ARP_TYPE
                 ether.dst = packet.src
-                ether.src = LOAD_BALANCER_MAC
+                ether.src = LOAD_BALANCER['MAC']
                 ether.set_payload(arp_rep)
 
                 log.info('Faking ARP reply for client as loadbalancer')
@@ -98,12 +114,14 @@ class Controller (EventMixin):
         elif packet.type == packet.IP_TYPE:
             log.info("Sending non ARP packet")
             self.ipToMac [str(packet.next.srcip)] =  packet.src
-            
-            if packet.dst == LOAD_BALANCER_MAC:
+            if packet.dst == LOAD_BALANCER['MAC']:
                 #client -> server , choose random server and create rule
                 server_num = random.randint(0,3)
-                self.results[server_num] = self.results[server_num] + 1
                 server_ip = servers_ip[server_num]
+                
+                self.results[server_num] = self.results[server_num] + 1
+                balancer_plot[server_ip] = self.results[server_num]
+                
                 server_mac = self.ipToMac[server_ip]
                 server_port = self.macToPort[server_mac]
                 server_ip = IPAddr(server_ip)
@@ -121,8 +139,8 @@ class Controller (EventMixin):
                 msg.match.nw_src = server_ip
                 msg.match.nw_dst = packet.next.srcip
 
-                msg.actions.append(of.ofp_action_nw_addr.set_src(LOAD_BALANCER_IP))
-                msg.actions.append(of.ofp_action_dl_addr.set_src(LOAD_BALANCER_MAC))
+                msg.actions.append(of.ofp_action_nw_addr.set_src(LOAD_BALANCER['IP']))
+                msg.actions.append(of.ofp_action_dl_addr.set_src(LOAD_BALANCER['MAC']))
                 msg.actions.append(of.ofp_action_output(port = event.port))
 
                 event.connection.send(msg)
@@ -136,10 +154,10 @@ class Controller (EventMixin):
 
                 msg.match.in_port = event.port
                 msg.match.dl_src = packet.src
-                msg.match.dl_dst = LOAD_BALANCER_MAC
+                msg.match.dl_dst = LOAD_BALANCER['MAC']
                 msg.match.dl_type = ethernet.IP_TYPE
                 msg.match.nw_src = packet.next.srcip
-                msg.match.nw_dst = LOAD_BALANCER_IP
+                msg.match.nw_dst = LOAD_BALANCER['IP']
                 
                 msg.actions.append(of.ofp_action_nw_addr.set_dst(server_ip))
                 msg.actions.append(of.ofp_action_dl_addr.set_dst(server_mac))
@@ -168,5 +186,4 @@ class Controller (EventMixin):
                     msg.in_port = event.port
                     event.connection.send(msg)
 
-def launch():
-    core.registerNew(Controller)
+
