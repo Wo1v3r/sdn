@@ -10,11 +10,9 @@ from hosts import clients, servers
 
 
 log = core.getLogger()
-
 clients_mac = list(map(lambda (_,__,mac,___): EthAddr(mac),clients))
 clients_ip = list(map(lambda( _,ip,__,___): ip, clients))
 servers_ip = list(map(lambda(_,ip,__,___): ip, servers))
-
 balancer_plot = {}
 
 LOAD_BALANCER = {'MAC': EthAddr('00:00:00:00:00:10') }
