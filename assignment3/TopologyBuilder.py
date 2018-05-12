@@ -4,7 +4,7 @@ from textwrap import wrap
 import json
 import random
 
-GRAPH_SIZE = 10
+GRAPH_SIZE = 20
 graph = nx.erdos_renyi_graph(GRAPH_SIZE, 0.3)
 while not nx.is_connected(graph):
     graph = nx.erdos_renyi_graph(GRAPH_SIZE, 0.3)
@@ -76,3 +76,6 @@ for link in data2['links']:
 
 with open('result.json', 'w') as fp:
     json.dump({'hosts': hosts, 'switches': switches, 'links': links}, fp)
+
+with open('short-paths.json', 'w') as sp:
+    json.dump(short_paths, sp)

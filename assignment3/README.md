@@ -1,8 +1,10 @@
 # Software Defined Networks Assignment 2
 
 #### Make sure you first install
+sudo pip install simplejson
+sudo pip install networkx
 
-sudo apt-get install python3-matplotlib
+
 
 Assuming this directory is located aside 'pox' directory you can just:
 
