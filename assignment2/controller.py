@@ -33,6 +33,10 @@ class Controller (EventMixin):
         # result list, symbols for the $place of host -> h5,h6,h7,h8
         self.results = [0,0,0,0]
 
+        for ip in servers_ip:
+            balancer_plot[ip] = 0
+
+
     def _handle_ConnectionUp(self, event):
         dpid = dpid_to_str(event.dpid)
         log.info("Connection up event for: " + dpid)
