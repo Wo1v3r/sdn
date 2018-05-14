@@ -55,80 +55,95 @@ class Controller (EventMixin):
                 if dpid_to_str(connection.dpid) == dpid:
                     log.info('installing on ' + dpid + ' rule from: '+ str(inport) + ' to ' + str(outport))
                     connection.send(msg)
+
+        def arp_reply(arp_request):
+            src_ip = arp_request.protosrc
+            dst_ip = arp_request.protodst
+            dst_mac = EthAddr(ip_mac[str(dst_ip)])
+            log.info("Faking ARP Reply")
+            log.info('from ' + str(dst_ip) + ' to ' + str(src_ip))
+
+            reply = arp()
+            reply.opcode = arp.REPLY
+            reply.hwtype = arp_request.hwtype
+            reply.prototype = arp_request.prototype
+            reply.hwlen = arp_request.hwlen
+            reply.protolen = arp_request.protolen
+            reply.hwsrc = dst_mac
+            reply.hwdst = arp_request.hwsrc    
+            reply.protosrc = dst_ip
+            reply.protodst = src_ip
+
+            ether = ethernet()
+            ether.type = ethernet.ARP_TYPE
+            ether.dst = packet.src
+            ether.src = dst_mac
+            ether.set_payload(reply)
+
+            msg = of.ofp_packet_out()
+            msg.data = ether.pack()
+            msg.actions.append(of.ofp_action_output(port = of.OFPP_IN_PORT))
+            msg.in_port = event.port
+            event.connection.send(msg)
                             
+
         packet = event.parsed
+        src_mac = packet.src
                 
-        #To filter out ether packets ; and isinstance(packet.payload, ipv4)
-
-        if str(packet.src) in hosts_mac:
+        if str(src_mac) in hosts_mac:
             if packet.type == packet.ARP_TYPE:
-                if packet.next.opcode == arp.REQUEST:
-                    log.info("ARP Packet type - REQ")
-                    log.info('from ' + str(packet.next.protosrc) + ' to ' + str(packet.next.protodst))
-                    # Get the ARP request from packet
-                    arp_req = packet.next
-                    # Create ARP reply
-                    arp_rep = arp()
-                    arp_rep.opcode = arp.REPLY
-                    arp_rep.hwtype = arp_req.hwtype
-                    arp_rep.prototype = arp_req.prototype
-                    arp_rep.hwlen = arp_req.hwlen
-                    arp_rep.protolen = arp_req.protolen
-                    arp_rep.hwsrc = EthAddr(ip_mac[str(arp_req.protodst)])
-                    arp_rep.hwdst = arp_req.hwsrc    
-                    arp_rep.protosrc = arp_req.protodst
-                    arp_rep.protodst = arp_req.protosrc
+                if packet.payload.opcode == arp.REQUEST:
+                    arp_reply(packet.payload)
+                return
 
-                    # Create the Ethernet packet
-                    ether = ethernet()
-                    ether.type = ethernet.ARP_TYPE
-                    ether.dst = packet.src
-                    ether.src = EthAddr(ip_mac[str(arp_req.protodst)])
-                    ether.set_payload(arp_rep)
+            if str(packet.payload.dstip) in ip_hosts:
 
-                    # Send the ARP reply to client
-                    msg = of.ofp_packet_out()
-                    msg.data = ether.pack()
-                    msg.actions.append(of.ofp_action_output(port = of.OFPP_IN_PORT))
-                    msg.in_port = event.port
-                    event.connection.send(msg) 
+                src_host_ip = packet.payload.srcip
+                dst_host_ip = packet.payload.dstip
+                
+                src_hostname = ip_hosts[str(src_host_ip)]
+                dst_hostname = ip_hosts[str(dst_host_ip)]
 
-            elif str(packet.next.dstip) in ip_hosts:
-                log.info("Non ARP packet")
-                log.info('my src is: ' + str(packet.next.srcip))
-                log.info('my dst is: ' +  str(packet.next.dstip))
-                log.info('dest host: ' + ip_hosts[str(packet.next.dstip)])
-                src = host_switch[ip_hosts[str(packet.next.srcip)]]
-                dst = host_switch[ip_hosts[str(packet.next.dstip)]]
-                path = short_paths[src][dst]
-                chosen_path = path[random.randint(0, len(path) - 1)]
-                log.info('chosen:' + str(chosen_path))
+                log.info("Setting up path")
+                log.info('From | Host:' + src_hostname + ' IP: ' + str(src_host_ip))
+                log.info('To   | Host:' + dst_hostname + ' IP: ' +  str(dst_host_ip))
+                
+                src_switch = host_switch[src_hostname]
+                dst_switch = host_switch[dst_hostname]
 
-                for hop in range(len(chosen_path)):
+                paths = short_paths[src_switch][dst_switch]
+
+                path = paths[random.randint(0, len(paths) - 1)]
+                
+                log.info('Path: ' + str(path))
+
+                first_switch = filter(lambda x: x.id == path[0], switches)[0]
+                first_switch_dpid = first_switch.dpidstr
+                install_fwdrule(first_switch_dpid, packet, 1, 1)
+
+                for hop in range(len(path)):
                     for link in links:
-                        if hop == len(chosen_path) - 1:
-                            if link.node1 == chosen_path[hop] and link.node2 == ip_hosts[str(packet.next.dstip)]:
-                                outPort = link.port1
-                                inPort = link.port2
-                                log.info(link)
-                        elif link.node1 == chosen_path[hop] and link.node2 == chosen_path[hop + 1]:
+                        if hop == len(path) - 1 and link.node1 == path[hop] and link.node2 == dst_hostname:
                             outPort = link.port1
                             inPort = link.port2
-                            log.info(link)
-                        elif link.node2 == chosen_path[hop] and link.node1 == chosen_path[hop + 1]:
+                            break
+                        if link.node1 == path[hop] and link.node2 == path[hop + 1]:
+                            outPort = link.port1
+                            inPort = link.port2
+                            break
+                        if link.node2 == path[hop] and link.node1 == path[hop + 1]:
                             outPort = link.port2
                             inPort = link.port1
-                            log.info(link)
+                            break
 
-                    hop_switch = filter(lambda x: x.id == chosen_path[hop], switches)[0]
-                    log.info(str(hop_switch))
+                    hop_switch = filter(lambda x: x.id == path[hop], switches)[0]
                     hop_dpid = hop_switch.dpidstr
+
                     install_fwdrule(hop_dpid, packet, inPort, outPort)
+
+
                 
-                # installing rule for source host to his switch
-                hop_switch = filter(lambda x: x.id == chosen_path[0], switches)[0]
-                hop_dpid = hop_switch.dpidstr
-                install_fwdrule(hop_dpid, packet, 1, 1)
+                
 
 
 def launch():

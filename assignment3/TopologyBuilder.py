@@ -4,7 +4,7 @@ from textwrap import wrap
 import json
 import random
 
-GRAPH_SIZE = 20
+GRAPH_SIZE = 30
 graph = nx.erdos_renyi_graph(GRAPH_SIZE, 0.3)
 while not nx.is_connected(graph):
     graph = nx.erdos_renyi_graph(GRAPH_SIZE, 0.3)
