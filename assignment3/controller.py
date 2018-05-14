@@ -46,7 +46,8 @@ class Controller (EventMixin):
             msg.idle_timeout = 10
             msg.hard_timeout = 30
             msg.match = of.ofp_match.from_packet(packet)
-            #msg.buffer_id = None
+            msg.buffer_id = None
+            #msg.data = event.ofp
             msg.in_port = inport
             msg.actions.append(of.ofp_action_output(port=outport))
 
@@ -54,64 +55,51 @@ class Controller (EventMixin):
                 if dpid_to_str(connection.dpid) == dpid:
                     log.info('installing on ' + dpid + ' rule from: '+ str(inport) + ' to ' + str(outport))
                     connection.send(msg)
-
-        def send_packet(dpid, outport, data):
-            msg = of.ofp_packet_out(in_port=1, data = data)
-            msg.actions.append(of.ofp_action_output(port = outport))
-            for connection in core.openflow.connections:
-                if dpid_to_str(connection.dpid) == dpid:
-                    log.info('sending msg from: ' + dpid + ' port from: '+ str(1) + ' to ' + str(outport))
-                    connection.send(msg)
-
-
-        def flood(event):
-            msg = of.ofp_packet_out()
-            msg.actions.append(of.ofp_action_output(port=of.OFPP_FLOOD))
-            msg.data = event.ofp
-            msg.in_port = event.port
-            event.connection.send(msg)
                             
         packet = event.parsed
                 
         #To filter out ether packets ; and isinstance(packet.payload, ipv4)
 
         if str(packet.src) in hosts_mac:
-            log.info('from host: ')
-            log.info('my name is: ' +  str(packet.src))
-
             if packet.type == packet.ARP_TYPE:
-                log.info("ARP Packet type")
-                log.info('from ' + str(packet.next.protosrc) + ' to ' + str(packet.next.protodst)) 
-                # Get the ARP request from packet
-                arp_req = packet.next
+                if packet.next.opcode == arp.REQUEST:
+                    log.info("ARP Packet type - REQ")
+                    log.info('from ' + str(packet.next.protosrc) + ' to ' + str(packet.next.protodst))
+                    # Get the ARP request from packet
+                    arp_req = packet.next
+                    # Create ARP reply
+                    arp_rep = arp()
+                    arp_rep.opcode = arp.REPLY
+                    arp_rep.hwtype = arp_req.hwtype
+                    arp_rep.prototype = arp_req.prototype
+                    arp_rep.hwlen = arp_req.hwlen
+                    arp_rep.protolen = arp_req.protolen
+                    arp_rep.hwsrc = EthAddr(ip_mac[str(arp_req.protodst)])
+                    arp_rep.hwdst = arp_req.hwsrc    
+                    arp_rep.protosrc = arp_req.protodst
+                    arp_rep.protodst = arp_req.protosrc
 
-                # Create ARP reply
-                arp_rep = arp()
-                arp_rep.opcode = arp.REPLY
-                arp_rep.hwsrc = EthAddr(ip_mac[str(arp_req.protodst)])
-                arp_rep.hwdst = arp_req.hwsrc    
-                arp_rep.protosrc = arp_req.protodst
-                arp_rep.protodst = arp_req.protosrc
+                    # Create the Ethernet packet
+                    ether = ethernet()
+                    ether.type = ethernet.ARP_TYPE
+                    ether.dst = packet.src
+                    ether.src = EthAddr(ip_mac[str(arp_req.protodst)])
+                    ether.set_payload(arp_rep)
 
-                # Create the Ethernet packet
-                ether = ethernet()
-                ether.type = ethernet.ARP_TYPE
-                ether.dst = packet.src
-                ether.src = EthAddr(ip_mac[str(arp_req.protodst)])
-                ether.set_payload(arp_rep)
+                    # Send the ARP reply to client
+                    msg = of.ofp_packet_out()
+                    msg.data = ether.pack()
+                    msg.actions.append(of.ofp_action_output(port = of.OFPP_IN_PORT))
+                    msg.in_port = event.port
+                    event.connection.send(msg) 
 
-                # Send the ARP reply to client
-                msg = of.ofp_packet_out()
-                #msg.data = ether.pack()
-                msg.actions.append(of.ofp_action_output(port = of.OFPP_IN_PORT))
-                msg.in_port = event.port
-                event.connection.send(msg)     
-            else:
+            elif str(packet.next.dstip) in ip_hosts:
                 log.info("Non ARP packet")
-                log.info('my dst is: ' +  str(packet.next.protodst))
-                log.info('dest host: ' + ip_hosts[str(packet.next.protodst)])
-                src = host_switch[ip_hosts[str(packet.next.protosrc)]]
-                dst = host_switch[ip_hosts[str(packet.next.protodst)]]
+                log.info('my src is: ' + str(packet.next.srcip))
+                log.info('my dst is: ' +  str(packet.next.dstip))
+                log.info('dest host: ' + ip_hosts[str(packet.next.dstip)])
+                src = host_switch[ip_hosts[str(packet.next.srcip)]]
+                dst = host_switch[ip_hosts[str(packet.next.dstip)]]
                 path = short_paths[src][dst]
                 chosen_path = path[random.randint(0, len(path) - 1)]
                 log.info('chosen:' + str(chosen_path))
@@ -119,7 +107,7 @@ class Controller (EventMixin):
                 for hop in range(len(chosen_path)):
                     for link in links:
                         if hop == len(chosen_path) - 1:
-                            if link.node1 == chosen_path[hop] and link.node2 == ip_hosts[str(packet.next.protodst)]:
+                            if link.node1 == chosen_path[hop] and link.node2 == ip_hosts[str(packet.next.dstip)]:
                                 outPort = link.port1
                                 inPort = link.port2
                                 log.info(link)
@@ -141,7 +129,6 @@ class Controller (EventMixin):
                 hop_switch = filter(lambda x: x.id == chosen_path[0], switches)[0]
                 hop_dpid = hop_switch.dpidstr
                 install_fwdrule(hop_dpid, packet, 1, 1)
-                # send_packet(hop_dpid, 1, event.ofp)
 
 
 def launch():
