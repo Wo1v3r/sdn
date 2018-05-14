@@ -1,37 +1,42 @@
-# Software Defined Networks Assignment 2
+# Software Defined Networks Assignment 3
 
-#### Make sure you first install
-sudo pip install simplejson
-sudo pip install networkx
+## ECMP Routing using Network X
 
 
-
-Assuming this directory is located aside 'pox' directory you can just:
+### Required Libraries
 
 ```bash
-./run-mn.sh
-./run-pox.sh
+sudo pip install simplejson
+sudo pip install networkx
 ```
 
-Otherwise:
 
-    copy controller.py to pox/ext
-    copy hosts.py to pox/ext
+Assuming this repository is located alongside 'pox' directory (Same Parent dir) you can just:
+
 
 ### To Run:
 
-```
+```bash
+./build-top.sh
 ./run-mn.sh
 ./run-pox.sh
 
 
-mininet > h1 ping 10.0.0.10
-mininet > h2 ping 10.0.0.10
+mininet > h1 ping h<N>
+mininet > h2 ping h<N>
 ...
 
 mininet> exit
 ```
 
-If you want to copy and run on your own, you can add --ip=<LOAD_BALANCER_IP> switch
+* If you want to change the number of switches in the connected graph, set the GRAPH_SIZE variable in `TopologyBuilder.py`.
 
-Make sure you exit properly to see the plot
+
+#### Otherwise Before running make sure you:
+**copy** `TopologyReader.py`      to  `pox/ext`
+**copy** `TopologyBuilder.py`     to  `pox/ext`
+**copy** `controller.py`          to  `pox/ext`
+**copy** `NetworkStructures.py`   to  `pox/ext`
+
+#### And Run TopologyBuilder seperately
+
