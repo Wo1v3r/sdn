@@ -2,6 +2,8 @@
 
 ## ECMP Routing using Network X
 
+![alt text](./assets/graph_print.png)
+
 
 ### Required Libraries
 
