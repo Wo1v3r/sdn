@@ -34,11 +34,11 @@ mininet> exit
 * If you want to change the number of switches in the connected graph, set the GRAPH_SIZE variable in `TopologyBuilder.py`.
 
 
-#### Otherwise Before running make sure you:
-**copy** `TopologyReader.py`      to  `pox/ext`
-**copy** `TopologyBuilder.py`     to  `pox/ext`
-**copy** `controller.py`          to  `pox/ext`
-**copy** `NetworkStructures.py`   to  `pox/ext`
+#### Otherwise Before running make sure you copy following files to your `pox/ext` directory:
+* `TopologyReader.py`
+* `TopologyBuilder.py`
+* `controller.py`
+* `NetworkStructures.py`
 
-#### And Run TopologyBuilder seperately
+#### And Run TopologyBuilder seperately before starting mininet and pox
 
