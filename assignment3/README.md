@@ -4,12 +4,16 @@
 
 ![alt text](./assets/graph.png)
 
+The graph made with Erdös-Renyi model of 30 nodes(changeable as described below), each node is a switch in the topology.
+We have a rate of less than 50% that each switch will have a host connected.
+In the printed graph the red nodes are switches with a host.
 
 ### Required Libraries
 
 ```bash
 sudo pip install simplejson
 sudo pip install networkx
+sudo pip install matplotlib
 ```
 
 
@@ -28,7 +32,7 @@ mininet > h1 ping h<N>
 mininet > h2 ping h<N>
 ...
 
-mininet> exit
+mininet> quit
 ```
 
 * If you want to change the number of switches in the connected graph, set the GRAPH_SIZE variable in `TopologyBuilder.py`.
